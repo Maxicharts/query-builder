@@ -1,0 +1,5 @@
+{
+    "require": {
+        "mistic100/jquery-querybuilder": "^2.4"
+    }
+}
