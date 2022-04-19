@@ -22,9 +22,6 @@ class FilesystemTest extends \PHPUnit_Framework_TestCase
      * Tests the recursiveGlob function.
      *
      * @dataProvider providerRecursiveGlobFiles
-	 * @param array $expected
-	 * @param string $pattern
-	 * @param int $flags
      */
     public function testRecursiveGlobFiles($expected, $pattern, $flags = 0)
     {
@@ -101,9 +98,6 @@ class FilesystemTest extends \PHPUnit_Framework_TestCase
      * Tests the recursiveGlob function.
      *
      * @dataProvider providerRecursiveGlob
-	 * @param array $expected
-	 * @param string $pattern
-	 * @param int $flags
      */
     public function testRecursiveGlob($expected, $pattern, $flags = 0)
     {

@@ -46,6 +46,10 @@ QueryBuilder.prototype.reset = function() {
 
     this.model.root.empty();
 
+    this.model.root.data = undefined;
+    this.model.root.flags = $.extend({}, this.settings.default_group_flags);
+    this.model.root.condition = this.settings.default_condition;
+
     this.addRule(this.model.root);
 
     /**
@@ -54,6 +58,8 @@ QueryBuilder.prototype.reset = function() {
      * @memberof QueryBuilder
      */
     this.trigger('afterReset');
+
+    this.trigger('rulesChanged');
 };
 
 /**
@@ -86,6 +92,8 @@ QueryBuilder.prototype.clear = function() {
      * @memberof QueryBuilder
      */
     this.trigger('afterClear');
+
+    this.trigger('rulesChanged');
 };
 
 /**
@@ -344,7 +352,6 @@ QueryBuilder.prototype.setRules = function(data, options) {
 
     this.clear();
     this.setRoot(false, data.data, this.parseGroupFlags(data));
-    this.applyGroupFlags(this.model.root);
 
     /**
      * Modifies data before the {@link QueryBuilder#setRules} method
@@ -387,8 +394,6 @@ QueryBuilder.prototype.setRules = function(data, options) {
                         return;
                     }
 
-                    self.applyGroupFlags(model);
-
                     add(item, model);
                 }
             }
@@ -410,21 +415,24 @@ QueryBuilder.prototype.setRules = function(data, options) {
 
                 if (!item.empty) {
                     model.filter = self.getFilterById(item.id, !options.allow_invalid);
+                }
 
-                    if (model.filter) {
-                        model.operator = self.getOperatorByType(item.operator, !options.allow_invalid);
+                if (model.filter) {
+                    model.operator = self.getOperatorByType(item.operator, !options.allow_invalid);
 
-                        if (!model.operator) {
-                            model.operator = self.getOperators(model.filter)[0];
-                        }
-
-                        if (model.operator && model.operator.nb_inputs !== 0 && item.value !== undefined) {
-                            model.value = item.value;
-                        }
+                    if (!model.operator) {
+                        model.operator = self.getOperators(model.filter)[0];
                     }
                 }
 
-                self.applyRuleFlags(model);
+                if (model.operator && model.operator.nb_inputs !== 0) {
+                    if (item.value !== undefined) {
+                        model.value = item.value;
+                    }
+                    else if (model.filter.default_value !== undefined) {
+                        model.value = model.filter.default_value;
+                    }
+                }
 
                 /**
                  * Modifies the Rule object generated from the JSON

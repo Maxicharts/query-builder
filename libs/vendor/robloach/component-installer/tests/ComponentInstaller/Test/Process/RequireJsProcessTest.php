@@ -11,6 +11,8 @@
 
 namespace ComponentInstaller\Test\Process;
 
+use ComponentInstaller\Process\Process;
+use Composer\Composer;
 use ComponentInstaller\Process\RequireJsProcess;
 use Composer\Config;
 
@@ -19,9 +21,6 @@ use Composer\Config;
  */
 class RequireJsProcessTest extends ProcessTest
 {
-	/**
-	 * @var RequireJsProcess
-	 */
     protected $process;
 
     public function setUp()
@@ -34,8 +33,6 @@ class RequireJsProcessTest extends ProcessTest
      * testRequireJs
      *
      * @dataProvider providerRequireJs
-	 * @param array $json
-	 * @param string $expected
      */
     public function testRequireJs(array $json = array(), $expected = '')
     {
@@ -71,9 +68,6 @@ EOT;
      * testRequireJson
      *
      * @dataProvider providerRequireJson
-	 * @param array $packages
-	 * @param array $config
-	 * @param string $expected
      */
     public function testRequireJson(array $packages, array $config, $expected = null)
     {

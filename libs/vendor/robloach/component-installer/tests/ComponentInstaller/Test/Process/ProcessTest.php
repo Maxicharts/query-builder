@@ -25,44 +25,13 @@ use ComponentInstaller\Installer;
  */
 class ProcessTest extends \PHPUnit_Framework_TestCase
 {
-	/**
-	 * @var Composer
-	 */
     protected $composer;
-
-	/**
-	 * @var Config
-	 */
     protected $config;
-
-	/**
-	 * @var NullIO
-	 */
     protected $io;
-
-	/**
-	 * @var Filesystem
-	 */
     protected $filesystem;
-
-	/**
-	 * @var string
-	 */
     protected $componentDir;
-
-	/**
-	 * @var string
-	 */
     protected $vendorDir;
-
-	/**
-	 * @var string
-	 */
     protected $binDir;
-
-	/**
-	 * @var InstallationManager
-	 */
     protected $installationManager;
 
     public function setUp()
@@ -109,9 +78,6 @@ class ProcessTest extends \PHPUnit_Framework_TestCase
      * testGetComponentName
      *
      * @dataProvider providerGetComponentName
-	 * @param string $prettyName
-	 * @param array $extra
-	 * @param string $expected
      */
     public function testGetComponentName($prettyName, array $extra, $expected)
     {

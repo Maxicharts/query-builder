@@ -6,7 +6,7 @@ var cleanLn = require('./build/cleanLn');
 module.exports = function(grunt) {
     require('time-grunt')(grunt);
     require('jit-grunt')(grunt, {
-        scsslint: 'grunt-scss-lint',
+        sasslint: 'grunt-sass-lint',
         sass_injection: 'grunt-sass-injection',
         usebanner: 'grunt-banner'
     });
@@ -22,13 +22,13 @@ module.exports = function(grunt) {
             'src/public.js',
             'src/data.js',
             'src/template.js',
-            'src/model.js',
             'src/utils.js',
+            'src/model.js',
             'src/jquery.js'
         ],
         js_files_for_standalone: [
-            'bower_components/jquery-extendext/jQuery.extendext.js',
-            'bower_components/doT/doT.js',
+            'node_modules/jquery-extendext/jQuery.extendext.js',
+            'node_modules/dot/doT.js',
             'dist/js/query-builder.js'
         ]
     });
@@ -39,14 +39,14 @@ module.exports = function(grunt) {
         banner: '/*!\n' +
         ' * jQuery QueryBuilder <%= pkg.version %>\n' +
         ' * Copyright 2014-<%= grunt.template.today("yyyy") %> Damien "Mistic" Sorel (http://www.strangeplanet.fr)\n' +
-        ' * Licensed under MIT (http://opensource.org/licenses/MIT)\n' +
+        ' * Licensed under MIT (https://opensource.org/licenses/MIT)\n' +
         ' */',
 
         langBanner: '/*!\n' +
         ' * jQuery QueryBuilder <%= pkg.version %>\n' +
         ' * Locale: <%= lang_locale %>\n' +
         '<% if (lang_author) { %> * Author: <%= lang_author %>\n<% } %>' +
-        ' * Licensed under MIT (http://opensource.org/licenses/MIT)\n' +
+        ' * Licensed under MIT (https://opensource.org/licenses/MIT)\n' +
         ' */',
 
         // serve folder content
@@ -56,6 +56,11 @@ module.exports = function(grunt) {
                     host: '0.0.0.0',
                     port: 9000,
                     livereload: true
+                }
+            },
+            test: {
+                options: {
+                    port: 9001
                 }
             }
         },
@@ -177,7 +182,7 @@ module.exports = function(grunt) {
         wrap: {
             js: {
                 src: ['dist/js/query-builder.js'],
-                dest: '',
+                dest: 'dist/js/query-builder.js',
                 options: {
                     separator: '',
                     wrapper: function() {
@@ -217,8 +222,8 @@ module.exports = function(grunt) {
         // parse scss
         sass: {
             options: {
-                sourcemap: 'none',
-                style: 'expanded'
+                sourceMap: false,
+                outputStyle: 'expanded'
             },
             dist: {
                 files: [{
@@ -238,7 +243,7 @@ module.exports = function(grunt) {
         uglify: {
             options: {
                 banner: '<%= banner %>\n',
-                mangle: { except: ['$'] }
+                mangle: { reserved: ['$'] }
             },
             dist: {
                 files: [{
@@ -293,11 +298,10 @@ module.exports = function(grunt) {
         },
 
         // scss tests
-        scsslint: {
+        sasslint: {
             lib: {
                 options: {
-                    colorizeOutput: true,
-                    config: '.scss-lint.yml'
+                    configFile: '.sass-lint.yml'
                 },
                 src: ['src/**/*.scss']
             }
@@ -347,7 +351,7 @@ module.exports = function(grunt) {
         qunit: {
             all: {
                 options: {
-                    urls: ['tests/index.html?coverage=true'],
+                    urls: ['http://localhost:<%= connect.test.options.port %>/tests/index.html?coverage=true'],
                     noGlobals: true
                 }
             }
@@ -361,7 +365,8 @@ module.exports = function(grunt) {
                     src: ['src/*.js', 'src/plugins/**/plugin.js']
                 }],
                 options: {
-                    dest: '.coverage-results/all.lcov'
+                    dest: '.coverage-results/all.lcov',
+                    prefix: 'http://localhost:<%= connect.test.options.port %>/'
                 }
             }
         },
@@ -410,11 +415,12 @@ module.exports = function(grunt) {
     grunt.registerTask('test', [
         'jshint',
         'jscs',
-        'scsslint',
+        'sasslint',
         'build_lang',
         'build_css',
         'injector:testSrc',
         'injector:testModules',
+        'connect:test',
         'qunit_blanket_lcov',
         'qunit'
     ]);
@@ -424,7 +430,7 @@ module.exports = function(grunt) {
         'build_css',
         'injector:example',
         'open',
-        'connect',
+        'connect:dev',
         'watch'
     ]);
 

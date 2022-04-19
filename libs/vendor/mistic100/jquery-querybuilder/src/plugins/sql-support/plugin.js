@@ -2,7 +2,14 @@
  * @class SqlSupport
  * @memberof module:plugins
  * @description Allows to export rules as a SQL WHERE statement as well as populating the builder from an SQL query.
+ * @param {object} [options]
+ * @param {boolean} [options.boolean_as_integer=true] - `true` to convert boolean values to integer in the SQL output
  */
+QueryBuilder.define('sql-support', function(options) {
+
+}, {
+    boolean_as_integer: true
+});
 
 QueryBuilder.defaults({
     // operators for internal -> SQL conversion
@@ -241,9 +248,17 @@ QueryBuilder.extend(/** @lends module:plugins.SqlSupport.prototype */ {
      */
     getSQL: function(stmt, nl, data) {
         data = (data === undefined) ? this.getRules() : data;
-        nl = !!nl ? '\n' : ' ';
 
-        if (stmt === true) stmt = 'question_mark';
+        if (!data) {
+            return null;
+        }
+
+        nl = !!nl ? '\n' : ' ';
+        var boolean_as_integer = this.getPluginOptions('sql-support', 'boolean_as_integer');
+
+        if (stmt === true) {
+            stmt = 'question_mark';
+        }
         if (typeof stmt == 'string') {
             var config = getStmtConfig(stmt);
             stmt = this.settings.sqlStatements[config[1]](config[2]);
@@ -288,10 +303,10 @@ QueryBuilder.extend(/** @lends module:plugins.SqlSupport.prototype */ {
                                 value += sql.sep;
                             }
 
-                            if (rule.type == 'integer' || rule.type == 'double' || rule.type == 'boolean') {
-                                v = Utils.changeType(v, rule.type, true);
+                            if (rule.type == 'boolean' && boolean_as_integer) {
+                                v = v ? 1 : 0;
                             }
-                            else if (!stmt) {
+                            else if (!stmt && rule.type !== 'integer' && rule.type !== 'double' && rule.type !== 'boolean') {
                                 v = Utils.escapeString(v);
                             }
 
@@ -313,7 +328,9 @@ QueryBuilder.extend(/** @lends module:plugins.SqlSupport.prototype */ {
                     }
 
                     var sqlFn = function(v) {
-                        return sql.op.replace(/\?/, v);
+                        return sql.op.replace('?', function() {
+                            return v;
+                        });
                     };
 
                     /**
@@ -442,6 +459,10 @@ QueryBuilder.extend(/** @lends module:plugins.SqlSupport.prototype */ {
         var curr = out;
 
         (function flatten(data, i) {
+            if (data === null) {
+                return;
+            }
+
             // allow plugins to manually parse or handle special cases
             data = self.change('parseSQLNode', data);
 
@@ -465,7 +486,20 @@ QueryBuilder.extend(/** @lends module:plugins.SqlSupport.prototype */ {
             // it's a node
             if (['AND', 'OR'].indexOf(data.operation.toUpperCase()) !== -1) {
                 // create a sub-group if the condition is not the same and it's not the first level
-                if (i > 0 && curr.condition != data.operation.toUpperCase()) {
+
+                /**
+                 * Given an existing group and an AST node, determines if a sub-group must be created
+                 * @event changer:sqlGroupsDistinct
+                 * @memberof module:plugins.SqlSupport
+                 * @param {boolean} create - true by default if the group condition is different
+                 * @param {object} group
+                 * @param {object} AST
+                 * @param {int} current group level
+                 * @returns {boolean}
+                 */
+                var createGroup = self.change('sqlGroupsDistinct', i > 0 && curr.condition != data.operation.toUpperCase(), curr, data, i);
+
+                if (createGroup) {
                     /**
                      * Modifies the group generated from the SQL expression (this is called before the group is filled with rules)
                      * @event changer:sqlToGroup
@@ -545,15 +579,7 @@ QueryBuilder.extend(/** @lends module:plugins.SqlSupport.prototype */ {
                     Utils.error('SQLParse', 'Cannot find field name in {0}', JSON.stringify(data.left));
                 }
 
-                /**
-                 * Returns a filter identifier from the SQL field
-                 * @event changer:getSQLFieldID
-                 * @memberof module:plugins.SqlSupport
-                 * @param {string} field
-                 * @param {*} value
-                 * @returns {string}
-                 */
-                var id = self.change('getSQLFieldID', field, value);
+                var id = self.getSQLFieldID(field, value);
 
                 /**
                  * Modifies the rule generated from the SQL expression
@@ -583,6 +609,39 @@ QueryBuilder.extend(/** @lends module:plugins.SqlSupport.prototype */ {
      */
     setRulesFromSQL: function(query, stmt) {
         this.setRules(this.getRulesFromSQL(query, stmt));
+    },
+
+    /**
+     * Returns a filter identifier from the SQL field.
+     * Automatically use the only one filter with a matching field, fires a changer otherwise.
+     * @param {string} field
+     * @param {*} value
+     * @fires module:plugins.SqlSupport:changer:getSQLFieldID
+     * @returns {string}
+     * @private
+     */
+    getSQLFieldID: function(field, value) {
+        var matchingFilters = this.filters.filter(function(filter) {
+            return filter.field.toLowerCase() === field.toLowerCase();
+        });
+
+        var id;
+        if (matchingFilters.length === 1) {
+            id = matchingFilters[0].id;
+        }
+        else {
+            /**
+             * Returns a filter identifier from the SQL field
+             * @event changer:getSQLFieldID
+             * @memberof module:plugins.SqlSupport
+             * @param {string} field
+             * @param {*} value
+             * @returns {string}
+             */
+            id = this.change('getSQLFieldID', field, value);
+        }
+
+        return id;
     }
 });
 

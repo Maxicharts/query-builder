@@ -23,7 +23,7 @@ QueryBuilder.define('filter-description', function(options) {
                     $p.appendTo(rule.$el);
                 }
                 else {
-                    $p.show();
+                    $p.css('display', '');
                 }
 
                 $p.html('<i class="' + options.icon + '"></i> ' + description);
@@ -63,7 +63,7 @@ QueryBuilder.define('filter-description', function(options) {
                     });
                 }
                 else {
-                    $b.show();
+                    $b.css('display', '');
                 }
 
                 $b.data('bs.popover').options.content = description;
@@ -95,6 +95,9 @@ QueryBuilder.define('filter-description', function(options) {
                     $b.on('click', function() {
                         bootbox.alert($b.data('description'));
                     });
+                }
+                else {
+                    $b.css('display', '');
                 }
 
                 $b.data('description', description);

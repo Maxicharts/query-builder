@@ -1,13 +1,13 @@
-$(function () {
+$(function() {
     var $b = $('#builder');
 
     QUnit.module('plugins.sql-support', {
-        afterEach: function () {
+        afterEach: function() {
             $b.queryBuilder('destroy');
         }
     });
 
-    QUnit.test('Raw SQL', function (assert) {
+    QUnit.test('Raw SQL', function(assert) {
         $b.queryBuilder({
             filters: basic_filters,
             rules: basic_rules
@@ -30,7 +30,7 @@ $(function () {
         );
     });
 
-    QUnit.test('Placeholder SQL', function (assert) {
+    QUnit.test('Placeholder SQL', function(assert) {
         $b.queryBuilder({
             filters: basic_filters,
             rules: basic_rules
@@ -53,7 +53,7 @@ $(function () {
         );
     });
 
-    QUnit.test('Numbered SQL', function (assert) {
+    QUnit.test('Numbered SQL', function(assert) {
         $b.queryBuilder({
             filters: basic_filters,
             rules: basic_rules
@@ -92,7 +92,7 @@ $(function () {
         );
     });
 
-    QUnit.test('Named SQL', function (assert) {
+    QUnit.test('Named SQL', function(assert) {
         $b.queryBuilder({
             filters: basic_filters,
             rules: basic_rules
@@ -131,7 +131,36 @@ $(function () {
         );
     });
 
-    QUnit.test('All operators', function (assert) {
+    QUnit.test('Special chars', function(assert) {
+        // PhantomJS is broken https://github.com/ariya/phantomjs/issues/14921
+        if (!!window._phantom) {
+            assert.ok(true, 'Test ignore in PhantomJS');
+            return;
+        }
+
+        var chars = ['\'', '"', '$1', '$$', '$&', '$`', '$\''];
+
+        var sql = "name = '\\'' AND name = '\\\"' AND name = '$1' AND " +
+            "name = '$$' AND name = '$&' AND name = '$`' AND name = '$\\''";
+
+        $b.queryBuilder({
+            filters: basic_filters,
+            rules: chars.map(function(char) {
+                return {
+                    id: 'name',
+                    value: char
+                };
+            })
+        });
+
+        assert.equal(
+            $b.queryBuilder('getSQL').sql,
+            sql,
+            'Should output SQL with escaped special chars'
+        );
+    });
+
+    QUnit.test('All operators', function(assert) {
         $b.queryBuilder({
             filters: basic_filters,
             rules: all_operators_rules
@@ -154,14 +183,14 @@ $(function () {
         );
     });
 
-    QUnit.test('Nested rules', function (assert) {
+    QUnit.test('Nested rules', function(assert) {
 
         $b.queryBuilder({
             filters: [
-                {id: 'a', type: 'integer'},
-                {id: 'b', type: 'integer'},
-                {id: 'c', type: 'integer'},
-                {id: 'd', type: 'integer'}
+                { id: 'a', type: 'integer' },
+                { id: 'b', type: 'integer' },
+                { id: 'c', type: 'integer' },
+                { id: 'd', type: 'integer' }
             ]
         });
 
@@ -191,7 +220,7 @@ $(function () {
         );
     });
 
-    QUnit.test('Custom export/parsing', function (assert) {
+    QUnit.test('Custom export/parsing', function(assert) {
         var rules = {
             condition: 'AND',
             rules: [
@@ -225,13 +254,13 @@ $(function () {
             ]
         });
 
-        $b.on('ruleToSQL.queryBuilder.filter', function (e, rule, sqlValue, sqlOperator) {
+        $b.on('ruleToSQL.queryBuilder.filter', function(e, rule, sqlValue, sqlOperator) {
             if (rule.id === 'last_days') {
                 e.value = rule.field + ' ' + sqlOperator('DATE_SUB(NOW(), INTERVAL ' + sqlValue + ' DAY)');
             }
         });
 
-        $b.on('parseSQLNode.queryBuilder.filter', function (e) {
+        $b.on('parseSQLNode.queryBuilder.filter', function(e) {
             var data = e.value;
             // left must be the field name and right must be the date_sub function
             if (data.left && data.left.value == 'display_date' && data.operation == '>' && data.right && data.right.name == 'DATE_SUB') {
@@ -266,6 +295,82 @@ $(function () {
             $b.queryBuilder('getRules'),
             rules,
             'Should parse date_sub function'
+        );
+    });
+
+    QUnit.test('Automatically use filter from field', function(assert) {
+        var rules = {
+            condition: 'AND',
+            rules: [
+                {
+                    id: 'name',
+                    operator: 'equal',
+                    value: 'Mistic'
+                }
+            ]
+        };
+
+        var sql = 'username = \'Mistic\'';
+
+        $b.queryBuilder({
+            filters: [
+                {
+                    id: 'name',
+                    field: 'username',
+                    type: 'string'
+                },
+                {
+                    id: 'last_days',
+                    field: 'display_date',
+                    type: 'integer'
+                }
+            ]
+        });
+
+        $b.queryBuilder('setRulesFromSQL', sql);
+
+        assert.rulesMatch(
+            $b.queryBuilder('getRules'),
+            rules,
+            'Should use "name" filter from "username" field'
+        );
+    });
+
+    QUnit.test('Cast booleans', function(assert) {
+        $b.queryBuilder({
+            plugins: {
+              'sql-support': {
+                  boolean_as_integer: true
+              }
+            },
+            filters: [
+                {
+                    id: 'done',
+                    type: 'boolean'
+                }
+            ],
+            rules: [
+                {
+                    id: 'done',
+                    operator: 'equal',
+                    value: true
+                }
+            ]
+        });
+
+        assert.rulesMatch(
+            $b.queryBuilder('getSQL'),
+            'done = 1',
+            'Should convert boolean value to integer'
+        );
+
+        // don't do that in real life !
+        $b[0].queryBuilder.plugins['sql-support'].boolean_as_integer = false;
+
+        assert.rulesMatch(
+            $b.queryBuilder('getSQL'),
+            'done = true',
+            'Should not convert boolean value to integer'
         );
     });
 
@@ -330,27 +435,27 @@ $(function () {
         }, {
             id: 'price',
             operator: 'less',
-            value: '5'
+            value: 5
         }, {
             id: 'price',
             operator: 'less_or_equal',
-            value: '5'
+            value: 5
         }, {
             id: 'price',
             operator: 'greater',
-            value: '4'
+            value: 4
         }, {
             id: 'price',
             operator: 'greater_or_equal',
-            value: '4'
+            value: 4
         }, {
             id: 'price',
             operator: 'between',
-            value: ['4', '5']
+            value: [4,5]
         }, {
             id: 'price',
             operator: 'not_between',
-            value: ['4', '5']
+            value: [4,5]
         }, {
             id: 'name',
             operator: 'begins_with',

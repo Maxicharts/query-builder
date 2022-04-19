@@ -1,38 +1,20 @@
-# Component Installer for [Composer](http://getcomposer.org) [![Build Status](https://secure.travis-ci.org/RobLoach/component-installer.png?branch=master)](http://travis-ci.org/RobLoach/component-installer)
+Component Installer for Composer [![Build Status](https://secure.travis-ci.org/RobLoach/component-installer.png?branch=master)](http://travis-ci.org/RobLoach/component-installer)
+================================
 
 Allows installation of Components via [Composer](http://getcomposer.org).
 
-## Install
-
-```
-composer require robloach/component-installer
-```
-
-``` json
-{
-    "require": {
-        "robloach/component-installer": "*"
-    }
-}
-```
-
-## Usage
+Usage
+-----
 
 To install a Component with Composer, add the Component to your *composer.json*
-`require` key. The following will install [jQuery](http://jquery.com) and
-[normalize.css](https://github.com/necolas/normalize.css):
-
-```
-composer require components/jquery
-composer require components/normalize.css
-```
+`require` key. The following will install both [jQuery](http://jquery.com) and
+[normalize.css](http://necolas.github.io/normalize.css/):
 
 ``` json
 {
     "require": {
-        "components/jquery": "2.*",
-        "components/normalize.css": "3.*",
-        "robloach/component-installer": "*"
+        "components/jquery": "1.9.*",
+        "components/normalize.css": "2.*"
     }
 }
 ```
@@ -44,7 +26,7 @@ Components manually using a `script` or `link` tag:
 
 ``` html
 <script src="components/jquery/jquery.js"></script>
-<link href="components/normalize/normalize.css" rel="stylesheet">
+<link href="components/normalize/normalize.css" rel="stylesheet" type="text/css">
 ```
 
 For complex projects, a [RequireJS](http://requirejs.org) configuration is
@@ -69,7 +51,8 @@ file is also compiled, including all Component stylesheets:
 </html>
 ```
 
-## Configuration
+Configuration
+-------------
 
 There are a number of ways to alter how Components are installed and used.
 
@@ -115,31 +98,12 @@ RequireJS documentation.
 
 Defaults to `components`.
 
-### Assetic filters
-
-``` json
-{
-    "require": {
-        "components/jquery": "*"
-    },
-    "config": {
-        "component-dir": "public/assets",
-        "component-baseurl": "/assets",
-        "component-scriptFilters": {
-            "\\Assetic\\Filter\\GoogleClosure\\CompilerApiFilter": []
-        },
-        "component-styleFilters": {
-            "\\Assetic\\Filter\\CssImportFilter": []
-        }
-    }
-}
-```
-
-## Creating a Component
+Creating a Component
+--------------------
 
 To set up a Component to be installed with Component Installer, have it
 `require` the package *robloach/component-installer* and set the `type` to
-*component*, but it is not necessary:
+*component*:
 
 ``` json
 {
@@ -262,7 +226,7 @@ define use of [html5shiv](https://github.com/aFarkas/html5shiv):
                         "scripts": [
                             "dist/html5shiv.js"
                         ]
-                    }
+                    },
                 },
                 "require": {
                     "robloach/component-installer": "*"
@@ -273,39 +237,8 @@ define use of [html5shiv](https://github.com/aFarkas/html5shiv):
 }
 ```
 
-### Packages Without Component Support In *composer.json*
-
-Using [`extra`](https://getcomposer.org/doc/04-schema.md#extra)
-in *composer.json* allows use of Component Installer in packages that don't
-explicitly provide support for component, but do ship with their own *composer.json*. 
-Using `extra` with packages that ship with Component Installer, will override component's settings for that package.
-
-``` json
-{
-    "require": {
-        "datatables/datatables": "~1.10"
-    },
-    "extra": {
-        "component": {
-            "datatables/datatables": {
-                "scripts": [
-                    "media/js/jquery.dataTables.js"
-                ],
-                "styles": [
-                    "media/css/jquery.dataTables.css"
-                ],
-                "files": [
-                    "media/js/jquery.dataTables.min.js",
-                    "media/css/jquery.dataTables.min.css",
-                    "media/images/*.png"
-                ]
-            }
-        }
-    }
-}
-```
-
-## Not Invented Here
+Not Invented Here
+-----------------
 
 There are many other amazing projects from which Component Installer was
 inspired. It is encouraged to take a look at some of the [other great package
@@ -318,7 +251,8 @@ management systems](http://github.com/wilmoore/frontend-packagers):
 * [Ender](http://ender.jit.su)
 * etc
 
-## License
+License
+-------
 
 Component Installer is licensed under the MIT License - see LICENSE.md for
 details.

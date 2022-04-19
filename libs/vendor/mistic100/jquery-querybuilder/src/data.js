@@ -221,6 +221,29 @@ QueryBuilder.prototype._validateValue = function(rule, value) {
         }
     }
 
+    if ((rule.operator.type === 'between' || rule.operator.type === 'not_between') && value.length === 2) {
+        switch (QueryBuilder.types[filter.type]) {
+            case 'number':
+                if (value[0] > value[1]) {
+                    result = ['number_between_invalid', value[0], value[1]];
+                }
+                break;
+
+            case 'datetime':
+                // we need MomentJS
+                if (validation.format) {
+                    if (!('moment' in window)) {
+                        Utils.error('MissingLibrary', 'MomentJS is required for Date/Time validation. Get it here http://momentjs.com');
+                    }
+
+                    if (moment(value[0], validation.format).isAfter(moment(value[1], validation.format))) {
+                        result = ['datetime_between_invalid', value[0], value[1]];
+                    }
+                }
+                break;
+        }
+    }
+
     return result;
 };
 
@@ -394,11 +417,20 @@ QueryBuilder.prototype.getRuleInputValue = function(rule) {
             }
         }
 
-        if (operator.multiple && filter.value_separator) {
-            value = value.map(function(val) {
-                return val.split(filter.value_separator);
-            });
-        }
+        value = value.map(function(val) {
+            if (operator.multiple && filter.value_separator && typeof val == 'string') {
+                val = val.split(filter.value_separator);
+            }
+
+            if ($.isArray(val)) {
+                return val.map(function(subval) {
+                    return Utils.changeType(subval, filter.type);
+                });
+            }
+            else {
+                return Utils.changeType(val, filter.type);
+            }
+        });
 
         if (operator.nb_inputs === 1) {
             value = value[0];
@@ -435,7 +467,7 @@ QueryBuilder.prototype.setRuleInputValue = function(rule, value) {
         return;
     }
 
-    this._updating_input = true;
+    rule._updating_input = true;
 
     if (filter.valueSetter) {
         filter.valueSetter.call(this, rule, value);
@@ -476,7 +508,7 @@ QueryBuilder.prototype.setRuleInputValue = function(rule, value) {
         }
     }
 
-    this._updating_input = false;
+    rule._updating_input = false;
 };
 
 /**
